@@ -127,9 +127,6 @@ function! s:init_window(winid, bufnr, r) abort
         \ signcolumn: 'no', spell: 0, wrap: 0})
     call setwinvar(a:winid, '&' . name, value)
   endfor
-  if exists('+winfixbuf')
-    call setwinvar(a:winid, '&winfixbuf', 1)
-  endif
   if a:r.params.split ==# 'horizontal'
     call setwinvar(a:winid, '&winfixheight', 1)
   elseif a:r.params.split ==# 'vertical'
@@ -261,9 +258,6 @@ function! goda_hex#ui#hex#_quit(name, split, prev_bufnr, prev_winid) abort
   for winid in win_findbuf(bufnr)
     call win_gotoid(winid)
     if a:split ==# 'no' || winnr('$') == 1
-      if exists('+winfixbuf')
-        setlocal nowinfixbuf
-      endif
       if a:prev_bufnr > 0 && a:prev_bufnr != bufnr && bufexists(a:prev_bufnr)
         execute 'buffer!' a:prev_bufnr
       else
