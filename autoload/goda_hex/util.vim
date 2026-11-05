@@ -18,8 +18,13 @@ function! goda_hex#util#print(msg, name = 'goda-hex') abort
   endfor
 endfunction
 
-" input() that gives '' when it is interrupted.
+" input() that gives '' when it is interrupted. The tests give the inputs
+" in g:goda_hex#_inputs (an input() in a callback of a channel does not
+" read the keys of feedkeys() in every Vim).
 function! goda_hex#util#input(prompt, text = '') abort
+  if !empty(get(g:, 'goda_hex#_inputs', []))
+    return remove(g:goda_hex#_inputs, 0)
+  endif
   redraw
   try
     return input(a:prompt, a:text)

@@ -34,10 +34,12 @@ function! s:highlights(lnum) abort
         \ prop_type_get(p.type).highlight]})
 endfunction
 
-" Type {input} in the input() of the action {action}.
+" Give {input} (a string, or a list of them) to the input() of the action
+" {action}.
 function! s:input(action, input, params = {}) abort
-  call feedkeys(printf(":call goda_hex#ui#hex#do_action(%s, %s)\<CR>%s\<CR>",
-        \ string(a:action), string(a:params), a:input), 'xt')
+  let g:goda_hex#_inputs = type(a:input) == v:t_list ? copy(a:input) : [a:input]
+  call goda_hex#ui#hex#do_action(a:action, a:params)
+  call s:check('inputs of ' . a:action, g:goda_hex#_inputs, [])
 endfunction
 
 " The byte {address} under the cursor.
@@ -113,15 +115,14 @@ function! s:hex() abort
   call s:check('nextSearch', goda_hex#ui#hex#_get_current_address(), ['hex', 3])
   call goda_hex#ui#hex#do_action('nextSearch', #{direction: 'backward'})
   call s:check('nextSearch backward', goda_hex#ui#hex#_get_current_address(), ['hex', 2])
-  " (input() starts with "0x".)
-  call s:input('jump', '12')
+  call s:input('jump', '0x12')
   call s:check('jump', [line('.'), goda_hex#ui#hex#_get_current_address()], [2, ['hex', 0x12]])
   call goda_hex#jump('default', 5)
   call s:check('goda_hex#jump', goda_hex#ui#hex#_get_current_address(), ['hex', 5])
 
   " substitute from the cursor; checksum and inspect of a selection.
   call s:goto(0)
-  call feedkeys(":call goda_hex#ui#hex#do_action('substitute')\<CR>6c\<CR>4c\<CR>", 'xt')
+  call s:input('substitute', ['6c', '4c'])
   call s:check('substitute', getline(1)[16:41], '4c 4c 6f 2c 20 77 6f 72 4c')
   call goda_hex#ui#hex#do_action('undo')
   call s:goto(0)
