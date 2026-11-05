@@ -1,0 +1,366 @@
+*goda_hex.txt*	A hexadecimal editor on goda.vim
+
+Author: Shougo <Shougo.Matsu at gmail.com>
+License: MIT license
+
+CONTENTS                                                    *goda-hex-contents*
+
+Introduction		|goda-hex-introduction|
+Install			|goda-hex-install|
+Configuration		|goda-hex-configuration|
+Options			|goda-hex-options|
+Functions		|goda-hex-functions|
+Variables		|goda-hex-variables|
+UI hex			|goda-hex-ui-hex|
+Analyzers		|goda-hex-analyzers|
+Goda-fi sources		|goda-hex-goda-fi|
+Writing extensions	|goda-hex-extensions|
+Differences from ddx	|goda-hex-ddx|
+
+==============================================================================
+INTRODUCTION                                            *goda-hex-introduction*
+
+goda-hex.vim is the successor of ddx.vim on goda.vim: a hexadecimal editor
+whose file, UIs and analyzers are Go, in a binary built from your
+configuration (main.go), and Vim talks to it through goda.vim.  There is no
+Deno.
+
+==============================================================================
+INSTALL                                                      *goda-hex-install*
+
+It needs Vim 9.1 or Neovim 0.11, Go 1.26 and goda.vim:
+
+https://github.com/Shougo/goda.vim
+
+==============================================================================
+CONFIGURATION                                          *goda-hex-configuration*
+
+The configuration is a Go module in |g:goda_hex#config_dir|: a main.go that
+adds the UIs and the analyzers, and patches the options (examples/config has
+one):
+>go
+	b := hex.New()
+	b.AddUI(hexui.New())
+	b.AddAnalyzer(elf.New())
+	b.AddAnalyzer(zip.New())
+	b.PatchGlobal(hex.Options{
+		UI:        "hex",
+		Analyzers: []string{"elf", "zip"},
+	})
+	b.Main()
+<
+Build it with |goda_hex#build()|.
+
+g:goda_hex#config_dir                                   *g:goda_hex#config_dir*
+		The configuration module.
+		Default: "~/.vim/goda-hex", Neovim: stdpath('config') .
+		'/goda-hex'
+
+g:goda_hex#binary                                           *g:goda_hex#binary*
+		The binary built from it.
+		Default: "goda-hex" in the "goda-hex" directory of the cache
+		directory (Neovim: stdpath('cache'); Vim: $XDG_CACHE_HOME/vim
+		or ~/.cache/vim, %LOCALAPPDATA%/vim on MS-Windows).
+
+==============================================================================
+OPTIONS                                                      *goda-hex-options*
+
+Those of main.go (hex.Options; Builder.PatchGlobal() and PatchLocal()), of
+|goda_hex#custom#patch_global()| and |goda_hex#custom#patch_local()|, and of
+|goda_hex#start()|, merged in that order.  The params of a UI or of an
+analyzer are merged param by param.
+
+analyzers		(list)
+		The analyzers tried in order: the first that detects the file
+		parses it (|goda_hex#analyze()|).
+		Default: []
+
+analyzerParams		(dict)
+		The params of each analyzer, by its name.
+
+anotherPath		(string)
+		A file to compare with, from the same offset for the same
+		length: its differences are highlighted (|goda_hex#get_diff()|).
+		Default: ""
+
+length			(number)
+		How many bytes of the file are read: 0 is all of it.
+		NOTE: A large file takes long to show.  When it is less than
+		the file, the size of the file cannot be changed.
+		Default: 1048576 (1 MiB)
+
+name			(string)
+		The session: a start with the name of a session opens its
+		file again in it.
+		Default: "default"
+
+offset			(number)
+		Where the file is read from.
+		Default: 0
+
+path			(string)
+		The file: |expand()|ed, relative to the current directory.
+
+ui			(string)
+		The UI: "hex", ...
+
+uiParams		(dict)
+		The params of each UI, by its name.
+
+==============================================================================
+FUNCTIONS                                                  *goda-hex-functions*
+
+goda_hex#build()                                             *goda_hex#build()*
+		Build the configuration (after "go mod tidy").  The running
+		binary is stopped, and the new one starts with the next
+		request.
+
+goda_hex#start([{options}])                                  *goda_hex#start()*
+		Open the file of {options} (|goda-hex-options|) in the session
+		of their name, and show it.
+
+goda_hex#restart({name})                                   *goda_hex#restart()*
+		Read the file of the session {name} again: its changes are
+		lost.
+
+goda_hex#redraw({name})                                     *goda_hex#redraw()*
+		Show the session {name} again.
+
+goda_hex#ui_action({name}, {action} [, {params}])        *goda_hex#ui_action()*
+		Run the UI action {action} of the session {name}.
+
+goda_hex#analyze({name})                                   *goda_hex#analyze()*
+		The structure of the file of the session {name}: a list of
+		{name, values}, each value {name, rawType ("integer" or
+		"string"), value, size, address, ...}.
+
+goda_hex#change({name}, {value}, {new-value})               *goda_hex#change()*
+		Change {value} (one of |goda_hex#analyze()|) to {new-value}: a
+		number for an integer (of its size), a string for a string
+		(padded with zeros or cut to its size).
+
+goda_hex#jump({name}, {address})                              *goda_hex#jump()*
+		Move the cursor of the UI of the session {name} to {address}.
+
+goda_hex#get_diff({name})                                 *goda_hex#get_diff()*
+		The differences of the file of the session {name} with its
+		option "anotherPath": a list of {address, type ("changed",
+		"deleted": after the end of anotherPath, "added": after the
+		end of the file), oldValue, newValue}.
+
+goda_hex#get_strings({name} [, {min-length} [, {encoding}]])
+							*goda_hex#get_strings()*
+		The strings of the file of the session {name}: a list of
+		{text, address, encoding}, of at least {min-length} (default
+		4) characters in {encoding}: "ascii", "utf-8" (default),
+		"utf-16le" or "utf-16be".  A control character (but a tab or
+		a newline) ends a string.
+
+goda_hex#sessions()                                       *goda_hex#sessions()*
+		The names of the sessions.
+
+goda_hex#custom#patch_global({key-or-dict} [, {value}])
+						*goda_hex#custom#patch_global()*
+goda_hex#custom#patch_local({name}, {key-or-dict} [, {value}])
+						*goda_hex#custom#patch_local()*
+		Patch the options of every session, or of the session {name}.
+
+goda_hex#custom#set_global({dict})         *goda_hex#custom#set_global()*
+goda_hex#custom#set_local({name}, {dict})   *goda_hex#custom#set_local()*
+		Set them.
+
+goda_hex#custom#get_global()                *goda_hex#custom#get_global()*
+goda_hex#custom#get_local()                  *goda_hex#custom#get_local()*
+		The patches.
+
+goda_hex#custom#get_current([{name}])      *goda_hex#custom#get_current()*
+		The options of the session {name} (default: that of the
+		buffer).
+
+==============================================================================
+VARIABLES                                                  *goda-hex-variables*
+
+b:goda_hex_name                                               *b:goda_hex_name*
+		The session of the buffer of a UI.
+
+b:goda_hex_encoding                                       *b:goda_hex_encoding*
+		The encoding of the text of the bytes of the UI hex.
+
+w:goda_hex_ui_hex_status                             *w:goda_hex_ui_hex_status*
+		{name, offset, length, size} of the window of the UI hex, for
+		your status line.
+
+==============================================================================
+UI HEX                                                        *goda-hex-ui-hex*
+
+The bytes of the file, sixteen a line: their address, their values, and
+their text.  Its 'filetype' is "goda-hex-hex"; |:write| saves the file.
+>vim
+	autocmd FileType goda-hex-hex call s:goda_hex_settings()
+	function s:goda_hex_settings() abort
+	  nnoremap <buffer> q
+	        \ <Cmd>call goda_hex#ui#hex#do_action('quit')<CR>
+	  nnoremap <buffer> r
+	        \ <Cmd>call goda_hex#ui#hex#do_action('change')<CR>
+	endfunction
+<
+goda_hex#ui#hex#do_action({action} [, {params}])
+						*goda_hex#ui#hex#do_action()*
+		Run the action {action} of the session of this buffer.
+
+------------------------------------------------------------------------------
+PARAMS                                                 *goda-hex-ui-hex-params*
+
+encoding		(string)
+		The encoding of the text of the bytes: "utf-8" or "cp932".
+		Default: "utf-8"
+
+floatingBorder		(string | list)
+		The border of a floating window (Neovim): see
+		|nvim_open_win()|.
+		Default: "none"
+
+highlights		(dict)
+		The highlight group of each part:
+		ascii (""), changed ("ErrorMsg"), control (""), cursorAscii
+		("Search": the text of the byte under the cursor), diffAdd
+		("DiffAdd"), diffChange ("DiffChange"), diffDelete
+		("DiffDelete"), escape (""), floating ("NormalFloat"),
+		newLine (""), null (""), selected ("Visual"), tab ("").
+
+overwriteStatusline	(boolean)
+		Set 'statusline' of the window.  See also
+		|w:goda_hex_ui_hex_status|.
+		Default: v:true
+
+overwriteTitle		(boolean)
+		Set 'titlestring' (as when 'laststatus' is 0).
+		Default: v:false
+
+split			(string)
+		"horizontal", "vertical", "floating" (Neovim) or "no".
+		Default: "horizontal"
+
+splitDirection		(string)
+		Default: "botright"
+
+winCol, winRow		(number)
+		The position of a floating window.
+		Default: &columns / 4, &lines / 2 - 10
+
+winHeight		(number)
+		Default: 20
+
+winWidth		(number)
+		Default: &columns / 2
+
+------------------------------------------------------------------------------
+ACTIONS                                               *goda-hex-ui-hex-actions*
+
+The actions at "the byte" are at the byte under the cursor, or at the range
+from the byte selected (selectAddress) to it.  Those that take a value take
+the params:
+
+	type		"hex" (default: "41 42", "??" is any byte in a
+			search), "string" (in the param "encoding"),
+			"number" or "floating"
+	isLittle	little endian (default v:true)
+	isSigned	a signed number (default v:false)
+	size		of a number: its bytes (default 4; 4 or 8 for a
+			float)
+
+change		Change the byte to the value typed: one byte fills the
+		range; another value replaces the range of its length.
+checksum	Show the checksum of the range.  param method: "sum"
+		(default), "md5", "sha-1", "sha-256", "crc-8", "crc-16",
+		"crc-32".
+copy		Copy the byte, for paste.
+insert		Insert the value typed before the byte.
+inspect		Show the byte(s), or the number, float or text at it.
+jump		Jump to the address typed: "0x{address}", "{percent}%",
+		"+{offset}", "-{offset}".
+nextDiff	Jump to the next difference with anotherPath.
+nextSearch	Search the last value again.  param direction:
+		"forward" (default) or "backward".
+paste		Insert what was copied or removed before the byte.
+quit		Close the window.
+redo		Redo what was undone.
+remove		Remove the byte, for paste.
+resize		Make the buffer the size typed (it cannot be undone).
+save		Save the file.  param path: another file (relative to the
+		current directory).
+search		Search the value typed.  param direction.
+selectAddress	Select the byte (again: unselect it).
+substitute	Replace a value typed with another, in the range (to the
+		end without one).
+undo		Undo the last change.
+yank		Yank the byte(s): their hex (type "hex"), or their text.
+
+==============================================================================
+ANALYZERS                                                  *goda-hex-analyzers*
+
+elf		ext/analyzer/elf (ddx-analyzer-elf): the ELF header and the
+		program headers (32 or 64 bits, little or big endian).
+zip		ext/analyzer/zip (ddx-analyzer-zip): the local file headers,
+		the data descriptors, the central directory and its end.
+
+==============================================================================
+GODA-FI SOURCES                                              *goda-hex-goda-fi*
+
+ext/fi/hexfi has the sources and the kind of goda-fi.vim
+(https://github.com/Shougo/goda-fi.vim), of the session of the buffer the
+finder is started from.  Add them in your configuration of goda-fi.vim:
+>go
+	import "github.com/Shougo/goda-hex.vim/ext/fi/hexfi"
+
+	b.AddSource(hexfi.NewAnalyzeSource())
+	b.AddSource(hexfi.NewDiffSource())
+	b.AddSource(hexfi.NewStringSource(hexfi.StringParams{}))
+	b.AddKind(hexfi.NewKind())
+<
+hex_analyze	The values of |goda_hex#analyze()|.
+hex_diff	The differences of |goda_hex#get_diff()|.
+hex_string	The strings of |goda_hex#get_strings()|.  Params: minLength
+		(default 5), encoding (default that of the UI when it is
+		one of the strings, or "utf-8").
+
+The kind "hex" has the actions open (go to the address) and edit (change
+the value, |goda_hex#change()|).
+
+==============================================================================
+WRITING EXTENSIONS                                        *goda-hex-extensions*
+
+A UI is a hex.UI: Name() and New(), the hex.Instance of a session, with
+Redraw, Jump and its Actions (hex.Action: they return hex.Redraw to be
+drawn again).  Its Args have the options, its params, the context of the
+start, and the hex.Buffer of the file (and of anotherPath).
+
+An analyzer is a hex.Analyzer: Name(), Detect(buffer, params) and
+Parse(buffer, params), the hex.AnalyzeResult of each part of the file.
+hex.NewHeader reads them from declarations of C ("uint16_t e_type;").
+
+==============================================================================
+DIFFERENCES FROM DDX                                              *goda-hex-ddx*
+
+- The configuration is Go (main.go), not TypeScript: ddx#custom#load_config()
+  is |goda_hex#build()|, and the UIs and the analyzers are in the binary
+  (no ddx#custom#alias()).
+- ddx#... is goda_hex#... (ddx#start() is |goda_hex#start()|, ...), and the
+  variables are b:goda_hex_name, ...  The 'filetype' of the UI is
+  "goda-hex-hex".
+- The address of a line is that of its first byte in the file (with the
+  option "offset" too).
+- |:write| saves the file (the action save).
+- A substitution and the undo of a removal can be undone and redone.
+- "floating" values of the actions are floats (4 or 8 bytes).
+- The strings of utf-8 end at a control character.
+- The ELF analyzer reads the program headers at e_phoff, all of them, and
+  32 bits and big endian binaries.  The zip analyzer finds the data of an
+  entry with a data descriptor.
+- The ddu sources ddx_analyze, ddx_diff and ddx_string are the goda-fi
+  sources hex_analyze, hex_diff and hex_string, and the kind ddx is hex
+  (|goda-hex-goda-fi|).
+- There is no :Ddx command (ddx-commands.vim).
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:noet:fen:noet:
