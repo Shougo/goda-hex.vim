@@ -4,6 +4,6 @@ go 1.26.0
 
 require (
 	github.com/Shougo/goda-fi.vim v0.1.2
-	github.com/Shougo/goda.vim v0.6.0
+	github.com/Shougo/goda.vim v0.8.0
 	golang.org/x/text v0.43.0
 )
