@@ -41,6 +41,22 @@ function! s:default_bin() abort
   return s:cache_dir() . '/goda-hex' . (has('win32') ? '.exe' : '')
 endfunction
 
+" The options of goda#register(): the version of the Vim script, and how to
+" build the binary when there is none or it is of another version (goda.vim
+" builds it then). Not for the binary of g:goda_hex#binary: the user builds it.
+function! s:register_opts() abort
+  if exists('g:goda_hex#binary')
+    return s:version
+  endif
+  return extend(#{build: function('s:build_binary'), bin: s:default_bin()}, s:version)
+endfunction
+
+" The build of the binary for goda.vim, as it starts it (nothing else: it
+" is not running).
+function! s:build_binary() abort
+  call goda#build(#{name: 'hex', dir: s:config_dir(), bin: s:default_bin()})
+endfunction
+
 function! s:config_dir() abort
   if exists('g:goda_hex#config_dir')
     return expand(g:goda_hex#config_dir)
@@ -54,7 +70,7 @@ endfunction
 " build fails, the previous binary keeps running.
 function! goda_hex#build() abort
   call goda#build(#{name: 'hex', dir: s:config_dir(), bin: s:default_bin()})
-  call goda#register('hex', function('s:start'), s:version)
+  call goda#register('hex', function('s:start'), s:register_opts())
 endfunction
 
 " Start the binary: goda.vim calls it when a request needs the plugin "hex"
@@ -80,7 +96,7 @@ function! s:start() abort
   endif
 endfunction
 
-call goda#register('hex', function('s:start'), s:version)
+call goda#register('hex', function('s:start'), s:register_opts())
 
 " ---------------------------------------------------------------------------
 " API (that of ddx.vim)

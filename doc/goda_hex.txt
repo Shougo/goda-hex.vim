@@ -114,6 +114,9 @@ goda_hex#build()                                             *goda_hex#build()*
 		Build the configuration (after "go mod tidy").  The running
 		binary is stopped, and the new one starts with the next
 		request.
+		NOTE: The binary is built by itself when it starts and there
+		is none, or it is of another version than the Vim script (see
+		"build" of |goda#register()|): not |g:goda_hex#binary|.
 
 goda_hex#start([{options}])                                  *goda_hex#start()*
 		Open the file of {options} (|goda-hex-options|) in the session
