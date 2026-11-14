@@ -36,8 +36,7 @@ https://github.com/Shougo/goda.vim
 CONFIGURATION                                          *goda-hex-configuration*
 
 The configuration is a Go module in |g:goda_hex#config_dir|: a main.go that
-adds the UIs and the analyzers, and patches the options (examples/config has
-one):
+adds the UIs and the analyzers, and patches the options:
 >go
 	b := hex.New()
 	b.AddUI(hexui.New())
@@ -49,6 +48,9 @@ one):
 	})
 	b.Main()
 <
+A whole one is the author's:
+https://github.com/Shougo/shougo-s-github/tree/master/vim/rc/goda-hex
+
 Build it with |goda_hex#build()|.
 
 g:goda_hex#config_dir                                   *g:goda_hex#config_dir*

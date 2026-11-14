@@ -23,8 +23,39 @@ instead of TypeScript, and no Deno.
 
 ## Usage
 
-The configuration is a Go module (see [examples/config](examples/config)) in
-`~/.vim/goda-hex` (Neovim: `stdpath('config') .. '/goda-hex'`). Build it:
+The configuration is a Go module in `~/.vim/goda-hex` (Neovim:
+`stdpath('config') .. '/goda-hex'`); its `main.go`:
+
+```go
+package main
+
+import (
+	"github.com/Shougo/goda-hex.vim/ext/analyzer/elf"
+	"github.com/Shougo/goda-hex.vim/ext/analyzer/zip"
+	hexui "github.com/Shougo/goda-hex.vim/ext/ui/hex"
+	"github.com/Shougo/goda-hex.vim/hex"
+)
+
+func main() {
+	b := hex.New()
+	b.AddUI(hexui.New())
+	b.AddAnalyzer(elf.New())
+	b.AddAnalyzer(zip.New())
+	b.PatchGlobal(hex.Options{
+		UI:        "hex",
+		Analyzers: []string{"elf", "zip"},
+	})
+	b.Main()
+}
+```
+
+```sh
+go mod init goda-hex-config
+go get github.com/Shougo/goda-hex.vim@latest
+go mod tidy
+```
+
+Build it:
 
 ```vim
 call goda_hex#build()
