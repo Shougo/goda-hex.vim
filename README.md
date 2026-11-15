@@ -77,3 +77,20 @@ endfunction
 
 See `:help goda-hex` for everything else, and `:help goda-hex-ddx` for the
 differences from ddx.vim.
+
+## With goda-pm.vim
+
+With [goda-pm.vim](https://github.com/Shougo/goda-pm.vim), the build uses
+the plugins installed (`g:goda#workspace` of goda.vim): after an update,
+build again, with no `go get -u`. To build after every update:
+
+```toml
+[[plugins]]
+repo = 'Shougo/goda.vim'
+
+[[plugins]]
+repo = 'Shougo/goda-hex.vim'
+depends = 'goda.vim'
+lazy = true
+hook_post_update = 'call goda_hex#build()'
+```

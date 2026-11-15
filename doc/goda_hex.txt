@@ -52,6 +52,19 @@ A whole one is the author's:
 https://github.com/Shougo/shougo-s-github/tree/master/vim/rc/goda-hex
 
 Build it with |goda_hex#build()|.
+With |g:goda#workspace| (goda-pm.vim sets it), the build uses the plugins
+installed: after an update, build again, with no `go get -u`.  To build
+after every update:
+>toml
+	[[plugins]]
+	repo = 'Shougo/goda.vim'
+
+	[[plugins]]
+	repo = 'Shougo/goda-hex.vim'
+	depends = 'goda.vim'
+	lazy = true
+	hook_post_update = 'call goda_hex#build()'
+<
 
 g:goda_hex#config_dir                                   *g:goda_hex#config_dir*
 		The configuration module.
