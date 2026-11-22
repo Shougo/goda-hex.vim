@@ -1,10 +1,6 @@
 package hex
 
-import (
-	"encoding/json"
-	"fmt"
-	"maps"
-)
+import "github.com/Shougo/goda.vim/sdk/custom"
 
 // DefaultLength is the default of Options.Length: 1 MiB, as ddx.vim.
 const DefaultLength = 1024 * 1024
@@ -51,87 +47,16 @@ func (o Options) length() int64 {
 type Params map[string]any
 
 // optionMap is Options as Vim sends them.
-type optionMap = map[string]any
+type optionMap = custom.Map
 
-// paramKeys are the options merged param by param.
-var paramKeys = map[string]bool{"uiParams": true, "analyzerParams": true}
-
-func toMap(o Options) (optionMap, error) {
-	b, err := json.Marshal(o)
-	if err != nil {
-		return nil, err
-	}
-	m := optionMap{}
-	return m, json.Unmarshal(b, &m)
-}
-
-// merge is the options of dst with those of src over them.
-func merge(dst, src optionMap) optionMap {
-	out := maps.Clone(dst)
-	if out == nil {
-		out = optionMap{}
-	}
-	for k, v := range src {
-		if paramKeys[k] {
-			out[k] = mergeParams(asMap(out[k]), asMap(v))
-			continue
-		}
-		out[k] = v
-	}
-	return out
-}
-
-func mergeParams(dst, src map[string]any) map[string]any {
-	out := maps.Clone(dst)
-	if out == nil {
-		out = map[string]any{}
-	}
-	for name, p := range src {
-		m := maps.Clone(asMap(out[name]))
-		if m == nil {
-			m = map[string]any{}
-		}
-		maps.Copy(m, asMap(p))
-		out[name] = m
-	}
-	return out
-}
-
-func asMap(v any) map[string]any {
-	switch m := v.(type) {
-	case map[string]any:
-		return m
-	case Params:
-		return m
-	}
-	return nil
-}
-
-func fromMap(m optionMap) (Options, error) {
-	var o Options
-	b, err := json.Marshal(m)
-	if err != nil {
-		return o, err
-	}
-	if err := json.Unmarshal(b, &o); err != nil {
-		return o, fmt.Errorf("invalid options: %w", err)
-	}
-	if o.Name == "" {
-		o.Name = "default"
-	}
-	return o, nil
+// newCustom is the options of the configuration: the params of a UI and of
+// an analyzer are merged param by param (goda.vim's sdk/custom).
+func newCustom() *custom.Patches[Options] {
+	return custom.New[Options](custom.Params("uiParams", "analyzerParams"))
 }
 
 // DecodeParams is defaults with params over it: the params of a UI or an
 // analyzer, as its struct (json tags are the names of the params).
 func DecodeParams[T any](params Params, defaults T) (T, error) {
-	b, err := json.Marshal(params)
-	if err != nil {
-		return defaults, err
-	}
-	p := defaults
-	if err := json.Unmarshal(b, &p); err != nil {
-		return defaults, fmt.Errorf("invalid params: %w", err)
-	}
-	return p, nil
+	return custom.DecodeParams(params, defaults)
 }
