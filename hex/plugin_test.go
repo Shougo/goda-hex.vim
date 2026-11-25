@@ -34,8 +34,8 @@ func TestResolve(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	o, err := p.resolve(optionMap{"name": "x", "uiParams": map[string]any{"hex": map[string]any{"winHeight": 9}}},
-		patches{Global: optionMap{"path": "a.bin"}})
+	o, err := p.resolve(optionMap{"name": "x", "path": "a.bin",
+		"uiParams": map[string]any{"hex": map[string]any{"winHeight": 9}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func TestResolve(t *testing.T) {
 		o.UIParams["hex"]["winHeight"] != float64(9) {
 		t.Errorf("%+v", o)
 	}
-	if o, _ := p.resolve(optionMap{}, patches{}); o.length() != DefaultLength || o.Name != "default" {
+	if o, _ := p.resolve(optionMap{}); o.length() != DefaultLength || o.Name != "default" {
 		t.Errorf("defaults %+v", o)
 	}
 	if _, err := New().AddUI(nil2{}).AddUI(nil2{}).Plugin(); err == nil {

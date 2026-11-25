@@ -80,9 +80,8 @@ g:goda_hex#binary                                           *g:goda_hex#binary*
 ==============================================================================
 OPTIONS                                                      *goda-hex-options*
 
-Those of main.go (hex.Options; Builder.PatchGlobal() and PatchLocal()), of
-|goda_hex#custom#patch_global()| and |goda_hex#custom#patch_local()|, and of
-|goda_hex#start()|, merged in that order.  The params of a UI or of an
+Those of main.go (hex.Options; Builder.PatchGlobal() and PatchLocal()) and
+of |goda_hex#start()|, merged in that order.  The params of a UI or of an
 analyzer are merged param by param.
 
 analyzers		(list)
@@ -177,23 +176,10 @@ goda_hex#get_strings({name} [, {min-length} [, {encoding}]])
 goda_hex#sessions()                                       *goda_hex#sessions()*
 		The names of the sessions.
 
-goda_hex#custom#patch_global({key-or-dict} [, {value}])
-						*goda_hex#custom#patch_global()*
-goda_hex#custom#patch_local({name}, {key-or-dict} [, {value}])
-						*goda_hex#custom#patch_local()*
-		Patch the options of every session, or of the session {name}.
-
-goda_hex#custom#set_global({dict})         *goda_hex#custom#set_global()*
-goda_hex#custom#set_local({name}, {dict})   *goda_hex#custom#set_local()*
-		Set them.
-
-goda_hex#custom#get_global()                *goda_hex#custom#get_global()*
-goda_hex#custom#get_local()                  *goda_hex#custom#get_local()*
-		The patches.
-
-goda_hex#custom#get_current([{name}])      *goda_hex#custom#get_current()*
+goda_hex#get_current([{name}])                         *goda_hex#get_current()*
 		The options of the session {name} (default: that of the
-		buffer).
+		buffer): those it was started with, or those a start of it
+		would have.
 
 ==============================================================================
 VARIABLES                                                  *goda-hex-variables*
@@ -362,7 +348,9 @@ DIFFERENCES FROM DDX                                              *goda-hex-ddx*
 
 - The configuration is Go (main.go), not TypeScript: ddx#custom#load_config()
   is |goda_hex#build()|, and the UIs and the analyzers are in the binary
-  (no ddx#custom#alias()).
+  (no ddx#custom#alias()). The options are patched there (Builder.PatchGlobal,
+  PatchLocal) or given to |goda_hex#start()|, not in Vim script
+  (ddx#custom#patch_global()).
 - ddx#... is goda_hex#... (ddx#start() is |goda_hex#start()|, ...), and the
   variables are b:goda_hex_name, ...  The 'filetype' of the UI is
   "goda-hex-hex".

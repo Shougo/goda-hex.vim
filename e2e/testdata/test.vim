@@ -53,6 +53,7 @@ function! s:hex() abort
   call s:check('filetype', &filetype, 'goda-hex-hex')
   call s:check('name', b:goda_hex_name, 'default')
   call s:check('sessions', goda_hex#sessions(), ['default'])
+  call s:check('get_current', goda_hex#get_current().path, path)
   call s:check('lines', getline(1, '$'), [
         \ '00000000: 48 65 6c 6c 6f 2c 20 77 6f 72 6c 64 21 0a 00 01 |   Hello, world!...',
         \ '00000010: 02 e3 81 82 ff                                  |   .あ.',

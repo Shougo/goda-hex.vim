@@ -6,8 +6,7 @@ import "github.com/Shougo/goda.vim/sdk/custom"
 const DefaultLength = 1024 * 1024
 
 // Options are those of ddx.vim: of the configuration (Builder.PatchGlobal,
-// PatchLocal), of goda_hex#custom#patch_global() and patch_local(), and of
-// goda_hex#start(), merged in that order. The params of a UI or an analyzer
+// PatchLocal) and of goda_hex#start(), merged in that order. The params of a UI or an analyzer
 // are merged param by param.
 type Options struct {
 	// Name is the session: a start with the name of another shows it again.
